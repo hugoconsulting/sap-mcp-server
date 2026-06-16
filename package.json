@@ -1,0 +1,31 @@
+{
+  "name": "sap-mcp-server",
+  "version": "0.1.0",
+  "description": "Independent open-source MCP server for SAP (ABAP / BTP) via a backend relay",
+  "type": "module",
+  "license": "Apache-2.0",
+  "bin": {
+    "sap-mcp-server": "build/bundle.cjs"
+  },
+  "files": [
+    "build/bundle.cjs",
+    "connections.example.json",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "bundle": "esbuild src/index.ts --bundle --platform=node --target=node22 --format=cjs --outfile=build/bundle.cjs",
+    "build:sea": "node --experimental-sea-config sea-config.json",
+    "build:bin:linux": "npm run bundle && npm run build:sea && cp \"$(command -v node)\" build/sap-mcp-server-linux && npx postject build/sap-mcp-server-linux NODE_SEA_BLOB build/sea.blob --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2 && chmod +x build/sap-mcp-server-linux"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "esbuild": "^0.23.0",
+    "postject": "^1.0.0-alpha.6",
+    "typescript": "^5.5.0"
+  }
+}

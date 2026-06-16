@@ -1,0 +1,81 @@
+name: release
+
+# tag `v*` を push するとバイナリをビルドして Release Assets に添付する。
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write          # release への upload
+  id-token: write          # provenance 用 OIDC
+  attestations: write      # artifact attestation
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "${GITHUB_REF_NAME}" --title "${GITHUB_REF_NAME}" --generate-notes --draft --repo "${GITHUB_REPOSITORY}"
+
+  build-linux:
+    needs: create-release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm run build:bin:linux
+      - name: Checksum
+        run: cd build && sha256sum sap-mcp-server-linux > sap-mcp-server-linux.sha256
+      - name: Attest provenance
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: build/sap-mcp-server-linux
+      - name: Upload assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "${GITHUB_REF_NAME}" build/sap-mcp-server-linux build/sap-mcp-server-linux.sha256 connections.example.json --clobber --repo "${GITHUB_REPOSITORY}"
+
+  build-windows:
+    needs: create-release
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm run bundle
+      - run: node --experimental-sea-config sea-config.json
+      - name: Build Windows binary
+        shell: bash
+        run: |
+          node -e "require('fs').copyFileSync(process.execPath, 'build/sap-mcp-server-win.exe')"
+          npx postject build/sap-mcp-server-win.exe NODE_SEA_BLOB build/sea.blob --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2
+      - name: Checksum
+        shell: bash
+        run: cd build && sha256sum sap-mcp-server-win.exe > sap-mcp-server-win.exe.sha256
+      - name: Attest provenance
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: build/sap-mcp-server-win.exe
+      - name: Upload assets
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "${GITHUB_REF_NAME}" build/sap-mcp-server-win.exe build/sap-mcp-server-win.exe.sha256 --clobber --repo "${GITHUB_REPOSITORY}"
+
+  publish:
+    needs: [build-linux, build-windows]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish (undraft) release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release edit "${GITHUB_REF_NAME}" --draft=false --repo "${GITHUB_REPOSITORY}"

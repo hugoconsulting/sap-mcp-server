@@ -1,0 +1,24 @@
+# gitleaks 設定（デフォルトルールを継承しつつ、本プロジェクト固有の追加検出）
+[extend]
+useDefault = true
+
+[[rules]]
+id = "sap-relay-bearer"
+description = "Bearer token in config/code"
+regex = '''(?i)bearer\s+[a-z0-9._\-]{20,}'''
+
+[[rules]]
+id = "sap-client-secret-literal"
+description = "Hardcoded client secret-looking value"
+regex = '''(?i)(client[_-]?secret)\s*[:=]\s*["'][^"']{12,}["']'''
+
+# サンプル/プレースホルダは誤検出させない
+[allowlist]
+description = "placeholders in examples"
+regexes = [
+  '''REPLACE_WITH_[A-Z_]+''',
+  '''your-(backend|idp)\.example\.com''',
+]
+paths = [
+  '''connections\.example\.json''',
+]

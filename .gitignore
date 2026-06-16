@@ -1,0 +1,27 @@
+# --- dependencies ---
+node_modules/
+
+# --- build output (SEA binaries are distributed via Release, never committed) ---
+build/
+dist/
+*.blob
+sap-mcp-server-linux
+sap-mcp-server-win.exe
+sap-mcp-server-macos
+*.tgz
+
+# --- secrets / runtime config — NEVER commit ---
+connections.json
+*.local.json
+.env
+.env.*
+*.pem
+*.key
+service-key*.json
+
+# --- OS / editor noise ---
+.DS_Store
+*.Zone.Identifier
+Thumbs.db
+.idea/
+.vscode/

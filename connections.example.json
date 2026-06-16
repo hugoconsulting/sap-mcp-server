@@ -1,0 +1,15 @@
+{
+  "defaultConnection": "EXAMPLE",
+  "connections": {
+    "EXAMPLE": {
+      "relayUrl": "https://your-backend.example.com",
+      "auth": {
+        "tokenUrl": "https://your-idp.example.com/oauth/token",
+        "clientId": "REPLACE_WITH_CLIENT_ID",
+        "clientSecret": "REPLACE_WITH_CLIENT_SECRET"
+      },
+      "envTag": "DEV",
+      "timeoutMs": 120000
+    }
+  }
+}
