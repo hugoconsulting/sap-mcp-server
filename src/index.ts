@@ -12,7 +12,7 @@ import { listDestinations }                        from './destinations.js';
 import { callFm, callSelectTable, callAdtFreestyle, callAdtOsql, callAdtDdic } from './abap.js';
 import {
   callIasAdmin, callIpsJob, callCfApi, callBwzContent, callCtmsApi,
-  callFormsApi, callCisApi, callCpiApi,
+  callFormsApi, callCisApi, callCpiApi, callCli,
 } from './btp.js';
 import { setDestination, getCurrentDestination }   from './session.js';
 import { VERSION }                                  from './version.js';
@@ -282,6 +282,48 @@ const TOOLS = [
       required: ['destination', 'path'],
     },
   },
+  {
+    name: 'sap_call_btp_cli',
+    description: 'SAP btp CLI を実行する。利用可能なコマンドは SAP 公開リファレンス参照（help.sap.com「Account Administration Using the btp CLI」/ `btp help`）。args に CLI 引数の配列を渡す（例: ["assign","security/role-collection","<RC>","--to-group","<group>","--of-idp","sap.custom","--subaccount","<guid>"]）。login は不要（接続側で自動）。登録済みの btp CLI Destination 名（BasicAuthentication）を指定。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        destination: { type: 'string',  description: 'btp CLI Destination 名（BasicAuthentication）' },
+        args:        { type: 'array', items: { type: 'string' }, description: 'CLI 引数の配列（login/--url/--user/--password は不要）' },
+        timeoutMs:   { type: 'integer' },
+        connection:  { type: 'string' },
+      },
+      required: ['destination', 'args'],
+    },
+  },
+  {
+    name: 'sap_call_cf_cli',
+    description: 'Cloud Foundry CLI を実行する。利用可能なコマンドは SAP/CF 公開リファレンス参照（cli.cloudfoundry.org / `cf help`）。args に CLI 引数の配列を渡す。api/auth は接続側で自動。登録済みの cf CLI Destination 名を指定。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        destination: { type: 'string',  description: 'cf CLI Destination 名' },
+        args:        { type: 'array', items: { type: 'string' }, description: 'CLI 引数の配列（api/auth は不要）' },
+        timeoutMs:   { type: 'integer' },
+        connection:  { type: 'string' },
+      },
+      required: ['destination', 'args'],
+    },
+  },
+  {
+    name: 'sap_call_datasphere_cli',
+    description: 'SAP Datasphere CLI を実行する。利用可能なコマンドは SAP 公開リファレンス参照（`datasphere help`）。args に CLI 引数の配列を渡す。login は接続側で自動。登録済みの Datasphere CLI Destination 名を指定。注: ユーザー個人権限(user_scopes/authorization_code)が必須のコマンドは headless 非対応。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        destination: { type: 'string',  description: 'Datasphere CLI Destination 名' },
+        args:        { type: 'array', items: { type: 'string' }, description: 'CLI 引数の配列（login は不要）' },
+        timeoutMs:   { type: 'integer' },
+        connection:  { type: 'string' },
+      },
+      required: ['destination', 'args'],
+    },
+  },
 ];
 
 server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: TOOLS }));
@@ -482,6 +524,20 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
           query:       args.query,
           body:        args.body,
           headers:     args.headers,
+          timeoutMs:   args.timeoutMs,
+        });
+        return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+      }
+
+      case 'sap_call_btp_cli':
+      case 'sap_call_cf_cli':
+      case 'sap_call_datasphere_cli': {
+        const connection = getConnection(config, args.connection);
+        const service: 'btp' | 'cf' | 'datasphere' = name === 'sap_call_cf_cli' ? 'cf' : (name === 'sap_call_datasphere_cli' ? 'datasphere' : 'btp');
+        const result     = await callCli(connection, {
+          service,
+          destination: args.destination,
+          args:        args.args,
           timeoutMs:   args.timeoutMs,
         });
         return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };

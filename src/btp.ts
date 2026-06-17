@@ -85,3 +85,23 @@ export async function callCisApi(connection: ConnectionConfig, args: BtpCallArgs
 export async function callCpiApi(connection: ConnectionConfig, args: BtpCallArgs) {
   return _call(connection, '/call-cpi-api', args);
 }
+
+// SAP CLI 実行（btp / cf / Datasphere）。公開 REST 不在の操作（例: ロールコレクション↔User Group
+// 割当）を CLI 経由で実行する。relay → connection-backend /internal/cli で直列実行される。
+// 設計: 1016_アプリ設計/_共通機能の設計/10_CLI実行層_設計.md
+export interface CliCallArgs {
+  service:    'btp' | 'cf' | 'datasphere';
+  destination: string;
+  args:       string[];
+  timeoutMs?: number;
+}
+export async function callCli(connection: ConnectionConfig, a: CliCallArgs) {
+  if (!a.destination) throw new Error('destination が必要です');
+  if (!Array.isArray(a.args) || a.args.length === 0) throw new Error('args（CLI 引数配列）が必要です');
+  return relay(connection, '/call-cli', {
+    service:     a.service,
+    destination: a.destination,
+    args:        a.args,
+    timeoutMs:   a.timeoutMs,
+  });
+}
