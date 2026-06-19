@@ -25,6 +25,28 @@ stays controlled and auditable.
 | **Authentication** | Connects only over a secure, authenticated channel; SAP credentials are never held by the client. |
 | **Secret handling** | Connection secrets are kept **local only** and are **never** committed or embedded in the binary. |
 
+### Security pattern: role-based authorization
+
+Two scopes — `mcp` (**Full**) and `mcp_readonly` (**Reference-only**) — are enforced in layers (the reference backend implements this; bring-your-own backends are encouraged to follow it):
+
+1. **Scope gate (app level)** — every MCP route is mounted behind "require `mcp` *or* `mcp_readonly`"; a token with neither scope is rejected (403) before any handler runs.
+2. **Environment gate (per destination)** — each destination is tagged `DEV` / `QAS` / `PRD`. `mcp_readonly` may reach only `DEV`/`QAS` (PRD and untagged are denied — fail-closed). `mcp` reaches all.
+3. **Method gate (REST relays)** — `mcp_readonly` may issue only `GET` on the BTP service relays.
+4. **Hard-deny** — PII tools (IAS / IPS) and CLI execution are `mcp`-only, regardless of environment.
+
+| Tool | Full (`mcp`) | Read-only (`mcp_readonly`) |
+|---|---|---|
+| `sap_list_destinations` | all | DEV/QAS destinations only |
+| `sap_select_table` | all envs | DEV/QAS only |
+| `sap_call_fm` (incl. `commit`) | all envs | DEV/QAS only |
+| `sap_adt_freestyle` / `osql` / `ddic` | all envs | DEV/QAS only |
+| `sap_call_ias_admin` (IAS · PII) | all envs | **denied** |
+| `sap_call_ips_job` (IPS · PII) | all envs | **denied** |
+| `sap_call_cf_api` / `bwz_content` / `ctms_api` / `forms_api` / `cis_api` / `cpi_api` | all envs, any method | `GET` + DEV/QAS only |
+| `sap_call_btp_cli` / `cf_cli` / `datasphere_cli` | all envs | **denied** |
+
+Operational controls (defense in depth): (1) MCP key issuance, (2) scope `mcp` / `mcp_readonly`, (3) key revoke, (4) audit log of every call, (5) per-destination environment tag.
+
 ## Capabilities
 
 - **SAP ABAP**

@@ -23,6 +23,28 @@ SAP への AI アクセスを統制・監査可能に保つため、セキュリ
 | **認証** | セキュアな認証付き接続でのみアクセス。SAP の資格情報をクライアントが保持しません。 |
 | **機密管理** | 接続情報はローカルのみで管理し、リポジトリやバイナリに **埋め込みません**。 |
 
+### セキュリティパターン: ロール別認可
+
+`mcp`（**フル**）と `mcp_readonly`（**参照のみ**）の 2 スコープを多層で制御します（リファレンス backend が実装。BYO backend でも踏襲を推奨）:
+
+1. **スコープゲート（app 層）** — 全 MCP route を「`mcp` *または* `mcp_readonly` 必須」でマウント。どちらの scope も持たないトークンは handler 到達前に 403。
+2. **環境ゲート（Destination 単位）** — 各 Destination に `DEV` / `QAS` / `PRD` タグ。`mcp_readonly` は `DEV`/`QAS` のみ到達可（PRD・未設定は拒否＝fail-closed）。`mcp` は全環境。
+3. **メソッドゲート（REST relay）** — `mcp_readonly` は BTP relay で `GET` のみ。
+4. **完全拒否** — PII ツール（IAS / IPS）と CLI 実行は環境を問わず `mcp` 限定。
+
+| ツール | フル（`mcp`） | 参照のみ（`mcp_readonly`） |
+|---|---|---|
+| `sap_list_destinations` | 全件 | DEV/QAS の Destination のみ |
+| `sap_select_table` | 全環境 | DEV/QAS のみ |
+| `sap_call_fm`（`commit` 含む） | 全環境 | DEV/QAS のみ |
+| `sap_adt_freestyle` / `osql` / `ddic` | 全環境 | DEV/QAS のみ |
+| `sap_call_ias_admin`（IAS・PII） | 全環境 | **拒否** |
+| `sap_call_ips_job`（IPS・PII） | 全環境 | **拒否** |
+| `sap_call_cf_api` / `bwz_content` / `ctms_api` / `forms_api` / `cis_api` / `cpi_api` | 全環境・全メソッド | `GET` + DEV/QAS のみ |
+| `sap_call_btp_cli` / `cf_cli` / `datasphere_cli` | 全環境 | **拒否** |
+
+統制点（多層防御）: (1) MCP キー発行 (2) scope `mcp` / `mcp_readonly` (3) キー失効 (4) 全呼出の監査ログ (5) Destination 単位の環境タグ。
+
 ## できること
 
 - **SAP ABAP**
