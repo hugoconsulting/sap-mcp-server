@@ -16,7 +16,7 @@ import {
 } from './abap.js';
 import {
   callIasAdmin, callIpsJob, callCfApi, callBwzContent, callCtmsApi,
-  callFormsApi, callCisApi, callCpiApi, callCli,
+  callFormsApi, callCisApi, callCpiApi, callAnsApi, callCli,
 } from './btp.js';
 import { setDestination, getCurrentDestination }   from './session.js';
 import { VERSION }                                  from './version.js';
@@ -406,6 +406,24 @@ const TOOLS = [
     },
   },
   {
+    name: 'sap_call_ans_api',
+    description: 'Call the SAP Alert Notification Service REST API (full CRUD across all APIs). Configuration Management API: /cf/configuration/v1/condition | /action | /subscription (GET list / GET by name / POST / PUT / DELETE). Consumer API: /cf/consumer/v1/matched-events | /undelivered-events (GET). Producer API: /cf/producer/v1/resource-events (POST). Specify a registered ANS Destination name (OAuth2ClientCredentials).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        destination: { type: 'string',  description: 'ANS Destination name (e.g. SIC_ANS_PRD)' },
+        method:      { type: 'string',  description: 'HTTP method (default GET). GET to read; POST/PUT/DELETE to operate' },
+        path:        { type: 'string',  description: 'Resource path (e.g. /cf/configuration/v1/condition, /cf/configuration/v1/action, /cf/configuration/v1/subscription, /cf/consumer/v1/matched-events, /cf/producer/v1/resource-events)' },
+        query:       { type: 'object',  description: 'Query parameters' },
+        body:        { description: 'Request body (JSON for POST/PUT)' },
+        headers:     { type: 'object' },
+        timeoutMs:   { type: 'integer' },
+        connection:  { type: 'string' },
+      },
+      required: ['destination', 'path'],
+    },
+  },
+  {
     name: 'sap_call_btp_cli',
     description: 'Run the SAP btp CLI. See the SAP public reference for available commands (help.sap.com "Account Administration Using the btp CLI" / `btp help`). Pass CLI arguments as an array in args (e.g. ["assign","security/role-collection","<RC>","--to-group","<group>","--of-idp","sap.custom","--subaccount","<guid>"]). No login needed (handled by the connection). Specify a registered btp CLI Destination name (BasicAuthentication).',
     inputSchema: {
@@ -732,6 +750,20 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
       case 'sap_call_cpi_api': {
         const connection = getConnection(config, args.connection);
         const result = await callCpiApi(connection, {
+          destination: args.destination,
+          method:      args.method,
+          path:        args.path,
+          query:       args.query,
+          body:        args.body,
+          headers:     args.headers,
+          timeoutMs:   args.timeoutMs,
+        });
+        return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+      }
+
+      case 'sap_call_ans_api': {
+        const connection = getConnection(config, args.connection);
+        const result = await callAnsApi(connection, {
           destination: args.destination,
           method:      args.method,
           path:        args.path,
