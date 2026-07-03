@@ -1069,6 +1069,64 @@
         }
       },
       "aiDescription": "Pass CLI args as an array. Login handled by the connection. Commands needing individual user permissions (user_scopes/authorization_code) are not supported in headless mode. Full scope only."
+    },
+    {
+      "no": 31,
+      "id": "app_call_jira_api",
+      "summary": {
+        "ja": "JIRA REST API（外部アプリ / Apps & Services）",
+        "en": "JIRA REST API (external app / Apps & Services)"
+      },
+      "officialUrl": "https://developer.atlassian.com/cloud/jira/platform/rest/v3/intro/#",
+      "auth": "ClientCertificateAuthentication(mTLS)+bearer（Destination 側で解決）",
+      "callPath": [
+        {
+          "purpose": {
+            "ja": "課題 参照/更新",
+            "en": "Issue read/update"
+          },
+          "path": "GET/PUT /rest/api/2/issue/{key} , POST /rest/api/2/issue"
+        },
+        {
+          "purpose": {
+            "ja": "状態遷移",
+            "en": "Transition"
+          },
+          "path": "GET/POST /rest/api/2/issue/{key}/transitions"
+        },
+        {
+          "purpose": {
+            "ja": "コメント",
+            "en": "Comment"
+          },
+          "path": "POST /rest/api/2/issue/{key}/comment"
+        },
+        {
+          "purpose": {
+            "ja": "Service Desk 起票/照会",
+            "en": "Service Desk request"
+          },
+          "path": "POST/GET /rest/servicedeskapi/request"
+        },
+        {
+          "purpose": {
+            "ja": "検索(JQL)",
+            "en": "Search (JQL)"
+          },
+          "path": "GET /rest/api/2/search?jql=..."
+        }
+      ],
+      "roles": {
+        "full": {
+          "ja": "全環境で全操作（起票/遷移/コメント/照会）",
+          "en": "All envs: all operations"
+        },
+        "ro": {
+          "ja": "開発・品証(DEV/QAS)で全操作可・本番は不可",
+          "en": "DEV/QAS: all operations; PRD blocked"
+        }
+      },
+      "aiDescription": "Generic JIRA REST passthrough. mTLS client cert + bearer are resolved by the Destination — pass only method/path/body. path is relative to the destination base URL (do NOT include host or the /prot prefix; e.g. /rest/api/2/issue/{key}). Common: create issue POST /rest/api/2/issue; read GET /rest/api/2/issue/{key}; transition GET then POST /rest/api/2/issue/{key}/transitions; comment POST /rest/api/2/issue/{key}/comment; Service Desk POST /rest/servicedeskapi/request; search GET /rest/api/2/search?jql=. Ref: https://developer.atlassian.com/cloud/jira/platform/rest/v3/intro/#. Permissions are gated by the destination role: mcp_readonly may perform ALL operations but only on DEV/QAS destinations (PRD is 403); mcp full has all environments."
     }
   ]
 }

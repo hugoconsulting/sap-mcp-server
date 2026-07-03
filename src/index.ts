@@ -17,7 +17,7 @@ import {
 import {
   callIasAdmin, callIpsJob, callCfApi, callBwzContent, callCtmsApi,
   callFormsApi, callCisApi, callCpiApi, callAnsApi, callSbpaApi, callCli,
-  callDatasphereApi, callCalmApi,
+  callDatasphereApi, callCalmApi, callJiraApi,
 } from './btp.js';
 import { setDestination, getCurrentDestination }   from './session.js';
 import { VERSION }                                  from './version.js';
@@ -491,6 +491,24 @@ const TOOLS = [
     },
   },
   {
+    name: 'app_call_jira_api',
+    description: D('app_call_jira_api'),
+    inputSchema: {
+      type: 'object',
+      properties: {
+        destination: { type: 'string',  description: 'JIRA Destination name registered in Apps & Services (e.g. SIC_JIRA_PROTO)' },
+        method:      { type: 'string',  description: 'HTTP method (default GET). GET to read; POST/PUT/DELETE to operate (create issue, transition, comment)' },
+        path:        { type: 'string',  description: 'Resource path relative to the destination base URL (e.g. /rest/api/2/issue/{key}, /rest/servicedeskapi/request). Do NOT include the base host or /prot prefix.' },
+        query:       { type: 'object',  description: 'Query parameters' },
+        body:        { description: 'Request body (JSON for POST/PUT)' },
+        headers:     { type: 'object' },
+        timeoutMs:   { type: 'integer' },
+        connection:  { type: 'string' },
+      },
+      required: ['destination', 'path'],
+    },
+  },
+  {
     name: 'sap_call_btp_cli',
     description: D('sap_call_btp_cli'),
     inputSchema: {
@@ -873,6 +891,20 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
       case 'sap_call_calm_api': {
         const connection = getConnection(config, args.connection);
         const result = await callCalmApi(connection, {
+          destination: args.destination,
+          method:      args.method,
+          path:        args.path,
+          query:       args.query,
+          body:        args.body,
+          headers:     args.headers,
+          timeoutMs:   args.timeoutMs,
+        });
+        return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+      }
+
+      case 'app_call_jira_api': {
+        const connection = getConnection(config, args.connection);
+        const result = await callJiraApi(connection, {
           destination: args.destination,
           method:      args.method,
           path:        args.path,
