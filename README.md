@@ -90,6 +90,41 @@ cp connections.example.json ~/.config/sap-mcp-server/connections.json
 
 Lookup order: `$SAP_MCP_CONFIG` → `~/.config/sap-mcp-server/connections.json` → next to the executable.
 
+## Client Configuration
+
+Register this server in your AI client's MCP configuration file. Replace the binary path (`command`) according to your environment.
+
+### Gemini CLI (`~/.gemini/settings.json`)
+
+```json
+{
+  "mcpServers": {
+    "sap-abap": {
+      "command": "/path/to/sap-mcp-server-linux",
+      "args": []
+    }
+  }
+}
+```
+
+### Claude Desktop
+- **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
+- **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "sap-abap": {
+      "command": "C:\\path\\to\\sap-mcp-server-win.exe",
+      "args": []
+    }
+  }
+}
+```
+
+### Claude Code (CLI)
+The `install-sap-mcp.sh` script automatically registers the server in `~/.claude.json`.
+
 ## Build (developers)
 
 ```bash

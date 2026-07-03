@@ -88,6 +88,41 @@ cp connections.example.json ~/.config/sap-mcp-server/connections.json
 
 探索順: `$SAP_MCP_CONFIG` → `~/.config/sap-mcp-server/connections.json` → 実行ファイル近傍。
 
+## クライアント設定
+
+各 AI クライアントの MCP 設定ファイルに本サーバを登録します。バイナリのパス（`command`）は環境に合わせて置換してください。
+
+### Gemini CLI (`~/.gemini/settings.json`)
+
+```json
+{
+  "mcpServers": {
+    "sap-abap": {
+      "command": "/path/to/sap-mcp-server-linux",
+      "args": []
+    }
+  }
+}
+```
+
+### Claude Desktop
+- **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
+- **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "sap-abap": {
+      "command": "C:\\path\\to\\sap-mcp-server-win.exe",
+      "args": []
+    }
+  }
+}
+```
+
+### Claude Code (CLI)
+`install-sap-mcp.sh` を実行すると、`~/.claude.json` に自動登録されます。
+
 ## ビルド（開発者向け）
 
 ```bash
