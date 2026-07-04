@@ -46,7 +46,7 @@ async function relay(connection: ConnectionConfig, path: string, body: any, time
       headers: {
         'Content-Type':  'application/json',
         'Authorization': `Bearer ${token}`,
-        'X-MCP-User':    `mcp:${connection.id}`,
+        'X-MCP-User':    connection.mcpUser || `mcp:${connection.id}`,
       },
       body:    JSON.stringify(body || {}),
       signal:  controller.signal as any,

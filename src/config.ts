@@ -30,6 +30,8 @@ export interface ConnectionConfig {
   clientId:     string;
   clientSecret: string;
   tokenUrl:     string;       // 例: https://<subdomain>.authentication.<region>.hana.ondemand.com/oauth/token
+  // relay の X-MCP-User に載せる識別子（省略時 mcp:<接続id>）。HTTP エッジが本人 email/sub を注入する用途。
+  mcpUser?:     string;
 }
 
 export interface AppConfig {
