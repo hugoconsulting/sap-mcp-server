@@ -474,7 +474,7 @@ export const TOOLS = [
       properties: {
         destination: { type: 'string',  description: 'Cloud ALM Destination name (e.g. SIC_CALM)' },
         method:      { type: 'string',  description: 'HTTP method (default GET). GET to read; POST/PUT/DELETE to operate' },
-        path:        { type: 'string',  description: 'Resource path (e.g. /api/calm-projects/v1/projects, /api/calm-tasks/v1/tasks, /api/calm-landscape/v1/businessServices)' },
+        path:        { type: 'string',  description: 'Resource path (e.g. /api/calm-projects/v1/projects, /api/calm-tasks/v1/tasks, /api/calm-landscape/v1/businessServices, /api/calm-itsmapi/v1/supportcases/cases/ids). If the Destination URL already ends in /api, drop the leading /api here.' },
         query:       { type: 'object',  description: 'Query parameters' },
         body:        { description: 'Request body (JSON for POST/PUT)' },
         headers:     { type: 'object' },

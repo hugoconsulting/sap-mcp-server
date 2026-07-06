@@ -966,6 +966,20 @@
             "en": "Close event situation"
           },
           "path": "PUT /api/calm-event-situations/v1/event-situations/{id} （scope calm-api.event-situations.write）"
+        },
+        {
+          "purpose": {
+            "ja": "ITSM: サポートケースID一覧",
+            "en": "ITSM: list support case ids"
+          },
+          "path": "GET /api/calm-itsmapi/v1/supportcases/cases/ids?reporter=&customerNumber= （scope calm-api.itsm.read）"
+        },
+        {
+          "purpose": {
+            "ja": "ITSM: ケース作成",
+            "en": "ITSM: create support case"
+          },
+          "path": "POST /api/calm-itsmapi/v1/supportcases/cases （scope calm-api.itsm.write）"
         }
       ],
       "roles": {
@@ -978,7 +992,7 @@
           "en": "DEV/QAS: read only"
         }
       },
-      "aiDescription": "Base https://<region>.alm.cloud.sap/api. Scopes are granted on the service-instance (xs-security.authorities $XSMASTERAPPNAME.calm-api.<area>.read/write), NOT on the key — a route returns 403/404 when the instance lacks the scope. Alerts: GET /api/bsm-service/v1/events (scope calm-api.bsm.read). Acknowledge/close: PUT /api/calm-event-situations/v1/event-situations/{id} (scope calm-api.event-situations.write). Tasks require projectId."
+      "aiDescription": "Base https://<region>.alm.cloud.sap/api. Scopes are granted on the service-instance (xs-security.authorities $XSMASTERAPPNAME.calm-api.<area>.read/write), NOT on the key — a route returns 403/404 when the instance lacks the scope. If the Destination URL already ends in /api, omit the leading /api in the path arg (send /calm-projects/... not /api/calm-projects/...). Alerts: GET /api/bsm-service/v1/events (scope calm-api.bsm.read). Acknowledge/close: PUT /api/calm-event-situations/v1/event-situations/{id} (scope calm-api.event-situations.write). Tasks require projectId. ITSM — SAP Support Backbone cases (tickets), base /api/calm-itsmapi/v1/supportcases (note the path segment is calm-itsmapi, not calm-itsm; doc https://help.sap.com/docs/cloud-alm/apis/itsm-api). ITSM needs THREE things beyond the scope: (1) instance scopes calm-api.itsm.read + .write + .personal.read/.personal.write (contacts & personal data) + .attachments.read/.write; (2) TWO destinations created in the Cloud ALM tenant's OWN subaccount (NOT the consumer subaccount that holds this OAuth destination), ClientCertificateAuthentication using an S-user SAP Passport (.pfx) certificate — calm_itsm_support -> https://apps.support.sap.com/ and calm_itsm_documents_service -> https://documents.support.sap.com/ ; Cloud ALM resolves them by the caller token's tenant/zoneid, so they must live in that CALM subaccount; (3) reporter must be an S-user holding SAP-side case authorizations (read/create/close) granted in SAP for Me for the target customer number. Error map: 403 = instance is missing the itsm scope; 500 'Destination not found in SAP BTP' = the two ITSM destinations are absent in the CALM subaccount; 428 'not authorized ... customer number' = reporter S-user lacks case authorization. Read GETs (all take reporter=): /supportcases/cases/ids?customerNumber=|installationNumber= (list case ids), /supportcases/cases?id= (case detail), /supportcases/cases/activities|attachments|comments|contacts?id=, /supportcases/masterdata/components (CSN component tree, no reporter), /supportcases/masterdata/landscapeObjects (customer systems + customerNbr/installationNbr), /supportcases/masterdata/contacts?customerNumber= (needs personal.read). Write: POST /supportcases/cases (create; itsm.write; body priority/component/systemId/installationNumber/subject/description/customerNumber/reporter; priority 1 requires businessImpact) and PATCH /supportcases/cases?id=&reporter= (update). AI self-service: POST /supportcases/recommendations/solutions|categories (body description). Limits: 50 requests/min (429 over), cases closed >3 months are not returned, payload max 30MB."
     },
     {
       "no": 28,
