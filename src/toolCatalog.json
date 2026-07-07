@@ -1141,6 +1141,64 @@
         }
       },
       "aiDescription": "Generic JIRA REST passthrough. mTLS client cert + bearer are resolved by the Destination — pass only method/path/body. path is relative to the destination base URL (do NOT include host or the /prot prefix; e.g. /rest/api/2/issue/{key}). Common: create issue POST /rest/api/2/issue; read GET /rest/api/2/issue/{key}; transition GET then POST /rest/api/2/issue/{key}/transitions; comment POST /rest/api/2/issue/{key}/comment; Service Desk POST /rest/servicedeskapi/request; search GET /rest/api/2/search?jql=. Ref: https://developer.atlassian.com/cloud/jira/platform/rest/v3/intro/#. Permissions are gated by the destination role: mcp_readonly may perform ALL operations but only on DEV/QAS destinations (PRD is 403); mcp full has all environments."
+    },
+    {
+      "no": 32,
+      "id": "app_call_smartdb_api",
+      "summary": {
+        "ja": "SmartDB REST API v3（外部アプリ / Apps & Services）",
+        "en": "SmartDB REST API v3 (external app / Apps & Services)"
+      },
+      "officialUrl": "https://doc.support-dreamarts.com/SmartDB/Document/RestDocDocumentV3/index.html",
+      "auth": "NoAuthentication + 静的 bearer（バインダトークン・Destination の URL.headers.Authorization で解決）",
+      "callPath": [
+        {
+          "purpose": {
+            "ja": "バインダ詳細/ビュー一覧",
+            "en": "Binder detail / views"
+          },
+          "path": "GET /binders/{binder} , GET /binders/{binder}/views"
+        },
+        {
+          "purpose": {
+            "ja": "文書一覧（ビュー指定）",
+            "en": "Document list by view"
+          },
+          "path": "GET /binders/{binder}/views/{view}/documents"
+        },
+        {
+          "purpose": {
+            "ja": "文書 参照/登録/更新/削除",
+            "en": "Document CRUD"
+          },
+          "path": "GET/PUT/DELETE /binders/{binder}/documents/{document} , POST /binders/{binder}/documents"
+        },
+        {
+          "purpose": {
+            "ja": "業務プロセス/アクティビティ",
+            "en": "Process / activity"
+          },
+          "path": "POST /processes/start , GET /activities/worklist , PUT /activities/{activity}"
+        },
+        {
+          "purpose": {
+            "ja": "CSV 入出力",
+            "en": "CSV import/export"
+          },
+          "path": "GET /binders/{binder}/views/{view}/documents/csv , POST/PUT /binders/{binder}/documents/csv"
+        }
+      ],
+      "roles": {
+        "full": {
+          "ja": "全環境で全操作（文書 CRUD/プロセス実行）",
+          "en": "All envs: all operations"
+        },
+        "ro": {
+          "ja": "開発・品証(DEV/QAS)で全操作可・本番は不可",
+          "en": "DEV/QAS: all operations; PRD blocked"
+        }
+      },
+      "aiDescription": "Generic SmartDB (DreamArts) REST API v3 passthrough. The binder token (static bearer) is resolved by the Destination — pass only method/path/body. The destination base URL already ends in /hibiki/rest/3, so path is relative to it (do NOT include host or /hibiki/rest/3; e.g. /binders/{binder}). A binder token is scoped to ONE binder — calls to other binders return 403. Common: binder detail GET /binders/{binder}; views GET /binders/{binder}/views; documents of a view GET /binders/{binder}/views/{view}/documents (returns {documents,totalCount,pageSize}); document detail GET /binders/{binder}/documents/{document}; create POST /binders/{binder}/documents; update PUT /binders/{binder}/documents/{document}. Ref: https://doc.support-dreamarts.com/SmartDB/Document/RestDocDocumentV3/index.html. Permissions are gated by the destination role: mcp_readonly may perform ALL operations but only on DEV/QAS destinations (PRD is 403); mcp full has all environments."
     }
   ]
 }

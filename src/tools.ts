@@ -12,7 +12,7 @@ import {
 import {
   callIasAdmin, callIpsJob, callCfApi, callBwzContent, callCtmsApi,
   callFormsApi, callCisApi, callCpiApi, callAnsApi, callSbpaApi, callCli,
-  callDatasphereApi, callCalmApi, callJiraApi,
+  callDatasphereApi, callCalmApi, callJiraApi, callSmartdbApi,
 } from './btp.js';
 import catalog from './toolCatalog.json' with { type: 'json' };
 
@@ -503,6 +503,24 @@ export const TOOLS = [
     },
   },
   {
+    name: 'app_call_smartdb_api',
+    description: D('app_call_smartdb_api'),
+    inputSchema: {
+      type: 'object',
+      properties: {
+        destination: { type: 'string',  description: 'SmartDB Destination name registered in Apps & Services (e.g. SIC_SMARTDB_DEV)' },
+        method:      { type: 'string',  description: 'HTTP method (default GET). GET to read; POST/PUT/DELETE to operate (create/update document, execute activity)' },
+        path:        { type: 'string',  description: 'Resource path relative to the destination base URL which already ends in /hibiki/rest/3 (e.g. /binders/{binder}, /binders/{binder}/views/{view}/documents). Do NOT include the host or /hibiki/rest/3 prefix.' },
+        query:       { type: 'object',  description: 'Query parameters' },
+        body:        { description: 'Request body (JSON for POST/PUT)' },
+        headers:     { type: 'object' },
+        timeoutMs:   { type: 'integer' },
+        connection:  { type: 'string' },
+      },
+      required: ['destination', 'path'],
+    },
+  },
+  {
     name: 'sap_call_btp_cli',
     description: D('sap_call_btp_cli'),
     inputSchema: {
@@ -895,6 +913,20 @@ export async function dispatchTool(config: AppConfig, session: SessionState, nam
       case 'app_call_jira_api': {
         const connection = getConnection(config, args.connection);
         const result = await callJiraApi(connection, {
+          destination: args.destination,
+          method:      args.method,
+          path:        args.path,
+          query:       args.query,
+          body:        args.body,
+          headers:     args.headers,
+          timeoutMs:   args.timeoutMs,
+        });
+        return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+      }
+
+      case 'app_call_smartdb_api': {
+        const connection = getConnection(config, args.connection);
+        const result = await callSmartdbApi(connection, {
           destination: args.destination,
           method:      args.method,
           path:        args.path,
