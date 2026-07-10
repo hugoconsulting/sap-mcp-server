@@ -12,7 +12,7 @@ import {
 import {
   callIasAdmin, callIpsJob, callCfApi, callBwzContent, callCtmsApi,
   callFormsApi, callCisApi, callCpiApi, callAnsApi, callSbpaApi, callCli,
-  callDatasphereApi, callCalmApi, callJiraApi, callSmartdbApi,
+  callDatasphereApi, callCalmApi, callJiraApi, callSmartdbApi, callIbpApi,
 } from './btp.js';
 import catalog from './toolCatalog.json' with { type: 'json' };
 
@@ -404,6 +404,24 @@ export const TOOLS = [
         method:      { type: 'string',  description: 'HTTP method (default GET)' },
         path:        { type: 'string',  description: 'Resource path (e.g. /api/v1/MessageProcessingLogs, /api/v1/IntegrationPackages, /api/v1/IntegrationRuntimeArtifacts)' },
         query:       { type: 'object',  description: 'e.g. { $filter: "Status eq \'FAILED\'", $top: 100 }' },
+        body:        { description: 'Request body' },
+        headers:     { type: 'object' },
+        timeoutMs:   { type: 'integer' },
+        connection:  { type: 'string' },
+      },
+      required: ['destination', 'path'],
+    },
+  },
+  {
+    name: 'sap_call_ibp_api',
+    description: D('sap_call_ibp_api'),
+    inputSchema: {
+      type: 'object',
+      properties: {
+        destination: { type: 'string',  description: 'IBP Destination name (e.g. SIC_IBP_PRD)' },
+        method:      { type: 'string',  description: 'HTTP method (default GET). GET to read; POST for OData actions/writes' },
+        path:        { type: 'string',  description: 'Full OData service path (e.g. /sap/opu/odata/IBP/MASTER_DATA_API_SRV/..., /sap/opu/odata4/ibp/api_stock/srvd_a2x/ibp/api_stock/0001/...)' },
+        query:       { type: 'object',  description: 'e.g. { $filter: "...", $top: 100, $format: "json" }' },
         body:        { description: 'Request body' },
         headers:     { type: 'object' },
         timeoutMs:   { type: 'integer' },
@@ -843,6 +861,20 @@ export async function dispatchTool(config: AppConfig, session: SessionState, nam
       case 'sap_call_cpi_api': {
         const connection = getConnection(config, args.connection);
         const result = await callCpiApi(connection, {
+          destination: args.destination,
+          method:      args.method,
+          path:        args.path,
+          query:       args.query,
+          body:        args.body,
+          headers:     args.headers,
+          timeoutMs:   args.timeoutMs,
+        });
+        return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+      }
+
+      case 'sap_call_ibp_api': {
+        const connection = getConnection(config, args.connection);
+        const result = await callIbpApi(connection, {
           destination: args.destination,
           method:      args.method,
           path:        args.path,
