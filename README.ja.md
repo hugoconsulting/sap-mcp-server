@@ -80,48 +80,108 @@ curl -fsSL https://github.com/HUGO-Domon/sap-mcp-server/releases/latest/download
 
 ## 設定
 
-`connections.example.json` をコピーして `connections.json` を作成し、自環境の値を設定します。
+本バイナリは、1 つ以上の接続を記述した `connections.json` を読み込みます。読み込むのは
+**バイナリ自身**（AI クライアントとは独立）で、探索順は次のとおりです。
 
-```bash
-cp connections.example.json ~/.config/sap-mcp-server/connections.json
-```
+`$SAP_MCP_CONFIG` → `~/.config/sap-mcp-server/connections.json` → 実行ファイル近傍。
 
-探索順: `$SAP_MCP_CONFIG` → `~/.config/sap-mcp-server/connections.json` → 実行ファイル近傍。
-
-## クライアント設定
-
-各 AI クライアントの MCP 設定ファイルに本サーバを登録します。バイナリのパス（`command`）は環境に合わせて置換してください。
-
-### Gemini CLI (`~/.gemini/settings.json`)
+### connections.json のフォーマット
 
 ```json
 {
-  "mcpServers": {
-    "sap-abap": {
-      "command": "/path/to/sap-mcp-server-linux",
-      "args": []
+  "defaultConnection": "primary",
+  "connections": {
+    "primary": {
+      "defaultDestination": "AC1",
+      "relayUrl": "https://your-backend.example.com",
+      "relayBasePath": "/api/tableread/mcp",
+      "clientId": "sb-xxxxxxxx",
+      "clientSecret": "xxxxxxxx",
+      "tokenUrl": "https://<subdomain>.authentication.<region>.hana.ondemand.com/oauth/token"
     }
   }
 }
 ```
+
+| フィールド | 必須 | 説明 |
+|---|---|---|
+| `defaultConnection` | 任意 | ツール呼出で `connection` を省略したときに使う接続名。省略時は先頭エントリ。 |
+| `defaultDestination` | 任意 | ツール呼出で `destination` を省略したときの SAP 接続先（SID / Destination 名）。 |
+| `relayUrl` | **必須** | **バックエンド**のベース URL（approuter ではなく **backend ホスト自身**）。末尾スラッシュなし。 |
+| `relayBasePath` | **必須\*** | バックエンドが MCP relay をマウントしているパス。**バックエンドに一致させる必要があります。** 提供リファレンスバックエンドは **`/api/tableread/mcp`** です。 |
+| `clientId` / `clientSecret` | **必須** | バックエンドを保護する XSUAA service-key の OAuth2 `client_credentials`。 |
+| `tokenUrl` | **必須** | XSUAA トークンエンドポイント（末尾は `/oauth/token`）。 |
+
+> ⚠ **最も多い接続不良 — 「接続できない / ツールが 404」**
+> `relayBasePath` を省略すると既定 `/api/mcp` になり、リファレンスバックエンド（`/api/tableread/mcp`）と
+> **一致せず**、全 relay 呼び出しが 404 になります。必ずバックエンドの実マウントパスを設定してください。
+
+### 値の取得（推奨手順）
+
+バックエンド管理者に MCP キーの発行を依頼します。リファレンスバックエンドの **MCP 管理**アプリで、
+承認済み申請を開き **「認証情報を取得」** を押すと、全項目が表示され、次のボタンが使えます。
+
+- **一括コピー** — 完成した `connections.json` をクリップボードにコピー
+- **connections.json をダウンロード** — そのまま使えるファイルを保存
+
+`relayUrl` / `relayBasePath` / `clientId` / `clientSecret` / `tokenUrl` は自動で埋め込まれます。
+ダイアログ上で **`defaultDestination`**（と必要なら接続名）だけを設定してからコピー / ダウンロードしてください。
+
+> 認証情報は **1 回限り**の表示です。取り逃した場合は管理者に **再発行（rotate）** を依頼してください。
+
+### 作成 / 更新
+
+```bash
+mkdir -p ~/.config/sap-mcp-server
+# 新規: ダウンロードした connections.json を配置
+mv ~/Downloads/connections.json ~/.config/sap-mcp-server/connections.json
+chmod 600 ~/.config/sap-mcp-server/connections.json
+```
+
+別ランドスケープを追加するには、`connections` 配下に 2 つ目のエントリ（例 `"dev"` / `"prd"`）を足し、
+`defaultConnection` を設定するか、ツール呼出で `connection` 引数を指定します。機密は**ローカルのみ**で管理し、
+`connections.json` は**コミットしない**でください。
+
+## クライアント設定
+
+各 AI クライアントにバイナリを登録し、編集後は **クライアントを再起動**（または MCP を再接続）して再読込します。
+MCP サーバ名は任意です（以下では `sap-mcp-server`）。
+
+### Claude Code (CLI)
+
+`install-sap-mcp.sh` を実行すると `~/.claude.json` に自動登録されます。手動登録する場合:
+
+```bash
+claude mcp add sap-mcp-server -- /path/to/sap-mcp-server-linux
+```
+
+または `~/.claude.json` を直接編集:
+
+```json
+{ "mcpServers": { "sap-mcp-server": { "command": "/path/to/sap-mcp-server-linux", "args": [] } } }
+```
+
+Claude Code 内で **`/mcp`** を実行し、`sap-mcp-server` が connected と表示されるか確認します。
+**バイナリや `connections.json` を更新した後**は、`/mcp` → 再接続（または Claude Code 再起動）で反映されます。
 
 ### Claude Desktop
 - **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
 - **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
 
 ```json
-{
-  "mcpServers": {
-    "sap-abap": {
-      "command": "C:\\path\\to\\sap-mcp-server-win.exe",
-      "args": []
-    }
-  }
-}
+{ "mcpServers": { "sap-mcp-server": { "command": "C:\\path\\to\\sap-mcp-server-win.exe", "args": [] } } }
 ```
 
-### Claude Code (CLI)
-`install-sap-mcp.sh` を実行すると、`~/.claude.json` に自動登録されます。
+編集後は Claude Desktop を再起動してください。
+
+### Gemini CLI (`~/.gemini/settings.json`)
+
+```json
+{ "mcpServers": { "sap-mcp-server": { "command": "/path/to/sap-mcp-server-linux", "args": [] } } }
+```
+
+編集後は Gemini CLI セッションを再起動してください。（`connections.json` は上記の探索順でバイナリ側が読み込みます。
+クライアント設定はバイナリのパスを指すだけです。）
 
 ## ビルド（開発者向け）
 
