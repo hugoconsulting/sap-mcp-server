@@ -82,48 +82,110 @@ curl -fsSL https://github.com/HUGO-Domon/sap-mcp-server/releases/latest/download
 
 ## Configuration
 
-Copy `connections.example.json` to `connections.json` and fill in your environment.
+The binary reads a `connections.json` describing one or more backend connections. It is read by the
+**binary itself** (independent of the AI client), in this lookup order:
 
-```bash
-cp connections.example.json ~/.config/sap-mcp-server/connections.json
-```
+`$SAP_MCP_CONFIG` → `~/.config/sap-mcp-server/connections.json` → next to the executable.
 
-Lookup order: `$SAP_MCP_CONFIG` → `~/.config/sap-mcp-server/connections.json` → next to the executable.
-
-## Client Configuration
-
-Register this server in your AI client's MCP configuration file. Replace the binary path (`command`) according to your environment.
-
-### Gemini CLI (`~/.gemini/settings.json`)
+### connections.json format
 
 ```json
 {
-  "mcpServers": {
-    "sap-abap": {
-      "command": "/path/to/sap-mcp-server-linux",
-      "args": []
+  "defaultConnection": "primary",
+  "connections": {
+    "primary": {
+      "defaultDestination": "AC1",
+      "relayUrl": "https://your-backend.example.com",
+      "relayBasePath": "/api/tableread/mcp",
+      "clientId": "sb-xxxxxxxx",
+      "clientSecret": "xxxxxxxx",
+      "tokenUrl": "https://<subdomain>.authentication.<region>.hana.ondemand.com/oauth/token"
     }
   }
 }
 ```
+
+| Field | Required | Description |
+|---|---|---|
+| `defaultConnection` | optional | Connection used when a tool call omits `connection`. Defaults to the first entry. |
+| `defaultDestination` | optional | SAP destination (SID / Destination name) used when a tool call omits `destination`. |
+| `relayUrl` | **required** | Base URL of the **backend** (the backend host itself, **not** the approuter). No trailing slash. |
+| `relayBasePath` | **required*** | Path where the backend mounts the MCP relay. **It must match your backend.** The provided reference backend mounts it at **`/api/tableread/mcp`**. |
+| `clientId` / `clientSecret` | **required** | OAuth2 `client_credentials` of the XSUAA service key that protects the backend. |
+| `tokenUrl` | **required** | XSUAA token endpoint (ends with `/oauth/token`). |
+
+> ⚠ **Most common failure — "cannot connect / tools return 404".**
+> If `relayBasePath` is omitted it defaults to `/api/mcp`, which does **not** match the reference
+> backend (mounted at `/api/tableread/mcp`), so every relay call 404s. Always set `relayBasePath`
+> to your backend's actual MCP mount path.
+
+### Getting the values (recommended)
+
+Ask your backend administrator to issue you an MCP key. In the reference backend's **MCP admin** app,
+open your approved request and click **"Get credentials"**. The dialog shows every field and provides:
+
+- **Copy all** — copies the complete `connections.json` to the clipboard, and
+- **Download connections.json** — saves a ready-to-use file.
+
+`relayUrl`, `relayBasePath`, `clientId`, `clientSecret`, and `tokenUrl` are already filled in; you only
+set **`defaultDestination`** (and optionally the connection name) in the dialog before copying/downloading.
+
+> Credentials are shown **once**. If you miss them, ask the admin to **rotate** the key.
+
+### Create / update the file
+
+```bash
+mkdir -p ~/.config/sap-mcp-server
+# New install — move the downloaded file into place:
+mv ~/Downloads/connections.json ~/.config/sap-mcp-server/connections.json
+chmod 600 ~/.config/sap-mcp-server/connections.json
+```
+
+To add another landscape, add a second entry under `connections` (e.g. `"dev"`, `"prd"`), then either
+set `defaultConnection` or pass the `connection` argument per tool call. Keep secrets **local only** —
+never commit `connections.json`.
+
+## Client Configuration
+
+Register the binary in your AI client, then **restart the client** (or reconnect its MCP servers) so it
+reloads. The MCP server name is arbitrary; `sap-mcp-server` is used below.
+
+### Claude Code (CLI)
+
+`install-sap-mcp.sh` auto-registers the server in `~/.claude.json`. To register manually:
+
+```bash
+claude mcp add sap-mcp-server -- /path/to/sap-mcp-server-linux
+```
+
+…or edit `~/.claude.json` directly:
+
+```json
+{ "mcpServers": { "sap-mcp-server": { "command": "/path/to/sap-mcp-server-linux", "args": [] } } }
+```
+
+Verify with **`/mcp`** inside Claude Code — it should list `sap-mcp-server` as connected. After you
+**update the binary or `connections.json`**, run `/mcp` → reconnect (or restart Claude Code) to pick up
+the change.
 
 ### Claude Desktop
 - **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
 - **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
 
 ```json
-{
-  "mcpServers": {
-    "sap-abap": {
-      "command": "C:\\path\\to\\sap-mcp-server-win.exe",
-      "args": []
-    }
-  }
-}
+{ "mcpServers": { "sap-mcp-server": { "command": "C:\\path\\to\\sap-mcp-server-win.exe", "args": [] } } }
 ```
 
-### Claude Code (CLI)
-The `install-sap-mcp.sh` script automatically registers the server in `~/.claude.json`.
+Restart Claude Desktop after editing.
+
+### Gemini CLI (`~/.gemini/settings.json`)
+
+```json
+{ "mcpServers": { "sap-mcp-server": { "command": "/path/to/sap-mcp-server-linux", "args": [] } } }
+```
+
+Restart the Gemini CLI session after editing. (The binary still reads `connections.json` from the lookup
+order above — the client config only points at the binary.)
 
 ## Build (developers)
 

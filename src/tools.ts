@@ -595,7 +595,7 @@ export async function dispatchTool(config: AppConfig, session: SessionState, nam
       case 'sap_list_destinations': {
         const connection = getConnection(config, args.connection);
         const list       = await listDestinations(connection);
-        return { content: [{ type: 'text', text: JSON.stringify(list, null, 2) }] };
+        return { content: [{ type: 'text', text: JSON.stringify({ destinations: list }, null, 2) }] };
       }
 
       case 'sap_use_destination': {
