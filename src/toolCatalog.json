@@ -1199,6 +1199,57 @@
         }
       },
       "aiDescription": "Generic SmartDB (DreamArts) REST API v3 passthrough. The binder token (static bearer) is resolved by the Destination — pass only method/path/body. The destination base URL already ends in /hibiki/rest/3, so path is relative to it (do NOT include host or /hibiki/rest/3; e.g. /binders/{binder}). A binder token is scoped to ONE binder — calls to other binders return 403. Common: binder detail GET /binders/{binder}; views GET /binders/{binder}/views; documents of a view GET /binders/{binder}/views/{view}/documents (returns {documents,totalCount,pageSize}); document detail GET /binders/{binder}/documents/{document}; create POST /binders/{binder}/documents; update PUT /binders/{binder}/documents/{document}. Ref: https://doc.support-dreamarts.com/SmartDB/Document/RestDocDocumentV3/index.html. Permissions are gated by the destination role: mcp_readonly may perform ALL operations but only on DEV/QAS destinations (PRD is 403); mcp full has all environments."
+    },
+    {
+      "no": 33,
+      "id": "sap_call_ibp_api",
+      "summary": {
+        "ja": "Integrated Business Planning(IBP)OData API",
+        "en": "IBP OData API"
+      },
+      "officialUrl": "https://help.sap.com/docs/SAP_INTEGRATED_BUSINESS_PLANNING",
+      "auth": "BasicAuthentication（Communication User・Destination 側で解決）",
+      "callPath": [
+        {
+          "purpose": {
+            "ja": "マスタデータ参照/登録",
+            "en": "Master data read/write"
+          },
+          "path": "GET/POST /sap/opu/odata/IBP/MASTER_DATA_API_SRV/..."
+        },
+        {
+          "purpose": {
+            "ja": "計画データ参照/登録",
+            "en": "Planning data read/write"
+          },
+          "path": "GET/POST /sap/opu/odata/IBP/PLANNING_DATA_API_SRV/..."
+        },
+        {
+          "purpose": {
+            "ja": "在庫/バッチ(OData v4)",
+            "en": "Stock/Batch (OData v4)"
+          },
+          "path": "GET /sap/opu/odata4/ibp/api_stock/srvd_a2x/ibp/api_stock/0001/..."
+        },
+        {
+          "purpose": {
+            "ja": "分析データ抽出",
+            "en": "Analytics extract"
+          },
+          "path": "GET /sap/opu/odata/IBP/EXTRACT_ODATA_SRV/..."
+        }
+      ],
+      "roles": {
+        "full": {
+          "ja": "全環境で参照・更新",
+          "en": "All envs: read & update"
+        },
+        "ro": {
+          "ja": "開発・品証で参照・更新",
+          "en": "DEV/QAS: read & update"
+        }
+      },
+      "aiDescription": "Generic SAP IBP OData passthrough. BasicAuthentication (Communication User) is resolved by the Destination — pass only method/path/body. ALL IBP OData services share one host, so one Destination (e.g. SIC_IBP_PRD, URL = host root) serves every API and the service path is appended per call. path is relative to the destination host and must be the full OData service path (do NOT include the host). Services (Communication Scenario): SAP_COM_0720 Master data /sap/opu/odata/IBP/MASTER_DATA_API_SRV and Planning data /sap/opu/odata/IBP/PLANNING_DATA_API_SRV (OData v2); SAP_COM_0951 Stock /sap/opu/odata4/ibp/api_stock/srvd_a2x/ibp/api_stock/0001/ and Batch /sap/opu/odata4/ibp/api_batch/srvd_a2x/ibp/api_batch/0001/ (OData v4); SAP_COM_0143 Analytics extract /sap/opu/odata/IBP/EXTRACT_ODATA_SRV; SAP_COM_0326 External Scheduler /sap/opu/odata/sap/BC_EXT_APPJOB_MANAGEMENT;v=0002; SAP_COM_0465 SCIM user mgmt /sap/bc/http/sap/aps_iam_api_scim; SAP_COM_0093/0193 Business User via SOAP /sap/bc/srt/scs_ext/sap/managebusinessuserin (querybusinessuserin, querybusinessusermetadatain) and Business Roles /sap/opu/odata/sap/APS_IAM_SIAG_BROLE_SRV. OData v2 defaults to XML — this tool auto-sets Accept: application/json (except $metadata), or add ?$format=json. Read metadata GET <servicePath>/$metadata (XML). OData v2 writes/actions (POST) need an X-CSRF-Token: first GET with header X-CSRF-Token: Fetch to obtain the token, then send it on the POST (this tool does not fetch CSRF automatically). Permissions are gated by the destination role: mcp_readonly may perform read & update (GET and POST/PUT/DELETE) but only on DEV/QAS destinations (PRD is 403); mcp full has all environments."
     }
   ]
 }

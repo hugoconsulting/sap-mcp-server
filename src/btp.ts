@@ -86,6 +86,19 @@ export async function callCpiApi(connection: ConnectionConfig, args: BtpCallArgs
   return _call(connection, '/call-cpi-api', args);
 }
 
+// SAP Integrated Business Planning (IBP) OData API（Master/Planning Data・Stock/Batch v4・
+// Extract・Business User 等）。BasicAuthentication は Destination 側で解決するため、
+// 呼出側は method/path/body のみ指定する。OData v2 は既定 XML のため、既定 Accept を
+// application/json にする（$metadata と利用側の明示指定は尊重）。
+function _ensureIbpJsonAccept(args: BtpCallArgs): BtpCallArgs {
+  if (/\$metadata/i.test(args.path)) return args; // $metadata は XML 固定
+  const headers = { Accept: 'application/json', ...(args.headers || {}) };
+  return { ...args, headers };
+}
+export async function callIbpApi(connection: ConnectionConfig, args: BtpCallArgs) {
+  return _call(connection, '/call-ibp-api', _ensureIbpJsonAccept(args));
+}
+
 // SAP Alert Notification Service REST API（Configuration / Producer / Consumer 全 API）
 export async function callAnsApi(connection: ConnectionConfig, args: BtpCallArgs) {
   return _call(connection, '/call-ans-api', args);
