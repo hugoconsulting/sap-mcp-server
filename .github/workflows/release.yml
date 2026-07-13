@@ -15,7 +15,7 @@ jobs:
   create-release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Create draft release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -25,8 +25,8 @@ jobs:
     needs: create-release
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
       - run: npm ci
@@ -34,7 +34,7 @@ jobs:
       - name: Checksum
         run: cd build && sha256sum sap-mcp-server-linux > sap-mcp-server-linux.sha256
       - name: Attest provenance
-        uses: actions/attest-build-provenance@v1
+        uses: actions/attest-build-provenance@v4
         # provenance は public repo のみ対応。private の間はスキップ（public 化で自動有効化）。
         continue-on-error: true
         with:
@@ -48,8 +48,8 @@ jobs:
     needs: create-release
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
       - run: npm ci
@@ -59,7 +59,7 @@ jobs:
         shell: bash
         run: cd build && sha256sum sap-mcp-server-win.exe > sap-mcp-server-win.exe.sha256
       - name: Attest provenance
-        uses: actions/attest-build-provenance@v1
+        uses: actions/attest-build-provenance@v4
         # provenance は public repo のみ対応。private の間はスキップ（public 化で自動有効化）。
         continue-on-error: true
         with:
