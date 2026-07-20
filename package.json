@@ -21,12 +21,12 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
-    "http-proxy-agent": "^9.0.0",
+    "http-proxy-agent": "^9.1.0",
     "node-fetch": "^3.3.2"
   },
   "devDependencies": {
     "@types/node": "^25.9.1",
-    "esbuild": "^0.28.0",
+    "esbuild": "^0.28.1",
     "postject": "^1.0.0-alpha.6",
     "typescript": "^6.0.3"
   }
