@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
-    "http-proxy-agent": "^9.0.0",
+    "http-proxy-agent": "^9.1.0",
     "node-fetch": "^3.3.2"
   },
   "devDependencies": {
