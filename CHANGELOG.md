@@ -3,6 +3,8 @@
 記載は新しい順。バージョン管理ルールは HUGO-Design Issue #24 を正とする。
 v0.1.0〜v0.9.0 は git tag 運用済（各 tag 時点の変更内容は git log 参照）。
 
+## [0.12.1] - 2026-07-22
+- 依存脆弱性修正（Dependabot alert 7 件解消: hono 4.12.31 [high 含む] / esbuild 0.28.1 / body-parser 2.3.0）
 ## [0.12.0] - 2026-07-13
 - `sap_list_destinations`: 応答を配列（`[...]`）から `{ "destinations": [...] }` オブジェクト形式に変更
 
